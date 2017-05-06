@@ -1,5 +1,7 @@
 package emulation.i8080.cpu;
 
+import emulation.i8080.hardware.Memory;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
@@ -61,26 +63,21 @@ public class Cpu8080 {
         }
     }
 
-    private ByteBuffer ram = ByteBuffer.allocate(0x40000).order(ByteOrder.LITTLE_ENDIAN);
+    private Memory memory;
     private ByteBuffer regs = ByteBuffer.allocate(0xC).order(ByteOrder.BIG_ENDIAN);
     private Port[] ports = new Port[256];
     private boolean running = true, interruptions = false;
     private byte interruption = 0;
     private int count = 0;
 
-    public Cpu8080() {
+    public Cpu8080(Memory memory) {
+        this.memory = memory;
         reset();
     }
 
-    public void loadRom(ByteBuffer b, int address) {
-        b.position(0);
-        ram.position(address);
-        ram.put(b);
-    }
-
     public String disassemble(int address) {
-        ram.position(address & 0xFFFF);
-        int code = ram.get() & 0xFF;
+        int pos = address & 0xFFFF;
+        int code = memory.read(pos++) & 0xFF;
         char[] template = mnemonics[code].toCharArray();
         StringBuilder format = new StringBuilder();
         for (int i = 0; i < template.length; i++) {
@@ -90,11 +87,12 @@ public class Cpu8080 {
                 i++;
                 switch (template[i]) {
                     case 'd':
-                        format.append(String.format("%02XH", ram.get()));
+                        format.append(String.format("%02XH", memory.read(pos++)));
                         break;
                     case 'D':
                     case 'A':
-                        format.append(String.format("%04XH", ram.getShort()));
+                        format.append(String.format("%04XH", memory.readLong(pos)));
+                        pos += 2;
                         break;
                     default:
                         format.append("??");
@@ -158,35 +156,35 @@ public class Cpu8080 {
     }
 
     private byte fetchBy(int reg) {
-        return ram.get(getAddress(reg));
+        return memory.read(getAddress(reg));
     }
 
     private short fetchLongBy(int reg) {
-        return ram.getShort(getAddress(reg));
+        return memory.readLong(getAddress(reg));
     }
 
     private byte fetchAt(short valueAddress) {
-        return ram.get(toAddress(valueAddress));
+        return memory.read(toAddress(valueAddress));
     }
 
     private short fetchLongAt(short valueAddress) {
-        return ram.getShort(toAddress(valueAddress));
+        return memory.readLong(toAddress(valueAddress));
     }
 
     private void storeBy(int reg, byte value) {
-        ram.put(getAddress(reg), value);
+        memory.write(getAddress(reg), value);
     }
 
     private void storeLongBy(int reg, short value) {
-        ram.putShort(getAddress(reg), value);
+        memory.writeLong(getAddress(reg), value);
     }
 
     private void storeAt(short valueAddress, byte value) {
-        ram.put(toAddress(valueAddress), value);
+        memory.write(toAddress(valueAddress), value);
     }
 
     private void storeLongAt(short valueAddress, short value) {
-        ram.putShort(toAddress(valueAddress), value);
+        memory.writeLong(toAddress(valueAddress), value);
     }
 
     private void putRegMem(int ref, byte value) {
@@ -257,7 +255,7 @@ public class Cpu8080 {
     }
 
     public void run(short start) {
-        Disassembler dis = new Disassembler(ram);
+        //Disassembler dis = new Disassembler(ram);
         //dis.disassembleAll();
 
         putRegisterLong(REG_PC, start);

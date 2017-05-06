@@ -1,6 +1,6 @@
 package emulation.i8080.hardware;
 
-public interface Ram {
+public interface Memory {
     int size();
 
     byte read(int address);
