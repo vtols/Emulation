@@ -75,6 +75,10 @@ public class Cpu8080 {
         reset();
     }
 
+    public void setPort(int portNumber, Port port) {
+        ports[portNumber] = port;
+    }
+
     public String disassemble(int address) {
         int pos = address & 0xFFFF;
         int code = memory.read(pos++) & 0xFF;
@@ -326,7 +330,7 @@ public class Cpu8080 {
     }
 
     private void execute(int code, int savePc) {
-        System.out.printf("%04x: %-10s %s\n", savePc, disassemble(savePc), registerString());
+        System.out.printf("[%7d]%04x: %-10s %s\n", count, (short) savePc, disassemble(savePc), registerString());
 
         int src, dst;
         int s, t, p;
