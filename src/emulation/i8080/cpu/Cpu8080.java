@@ -330,7 +330,7 @@ public class Cpu8080 {
     }
 
     private void execute(int code, int savePc) {
-        System.out.printf("[%7d]%04x: %-10s %s\n", count, (short) savePc, disassemble(savePc), registerString());
+        //System.out.printf("[%7d]%04x: %-10s %s\n", count, (short) savePc, disassemble(savePc), registerString());
 
         int src, dst;
         int s, t, p;

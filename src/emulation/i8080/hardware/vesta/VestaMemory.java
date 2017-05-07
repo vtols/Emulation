@@ -72,10 +72,10 @@ public class VestaMemory implements Memory {
     }
 
     public Port getModePort() {
-        return new ModeSelectionPort();
+        return new MemoryModePort();
     }
 
-    private class ModeSelectionPort implements Port {
+    private class MemoryModePort implements Port {
         @Override
         public void write(byte value) {
             for (int i = 0; i < MODE_COUNT; i++) {
@@ -91,5 +91,9 @@ public class VestaMemory implements Memory {
             }
             return (byte) value;
         }
+    }
+
+    public byte[] getRam() {
+        return ram;
     }
 }

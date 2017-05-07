@@ -2,6 +2,7 @@ package emulation.i8080;
 
 import emulation.i8080.cpu.Cpu8080;
 import emulation.i8080.hardware.vesta.VestaMemory;
+import emulation.i8080.hardware.vesta.VestaVideo;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -21,8 +22,10 @@ public class Main {
         }
 
         VestaMemory vsmem = new VestaMemory(rom);
+        VestaVideo video = new VestaVideo(vsmem.getRam());
         Cpu8080 c = new Cpu8080(vsmem);
         c.setPort(0x80, vsmem.getModePort());
+        c.setPort(0x84, video.getModePort());
         c.run((short) startPc);
     }
 }
