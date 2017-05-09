@@ -20,7 +20,7 @@ enum Instruction {
     CNZ,    CNC,    CPO,     CP,
     CM,      RZ,     RC,    RPE,
     RNC,    RPO,     RP,   XTHL,
-    IN,
+    IN,     RST,
     UNK;
 
     public static final Instruction[] decoded = {
@@ -39,10 +39,10 @@ enum Instruction {
             ANA, ANA, ANA, ANA, ANA, ANA, ANA, ANA, XRA, XRA, XRA, XRA, XRA, XRA, XRA, XRA,
             ORA, ORA, ORA, ORA, ORA, ORA, ORA, ORA, CMP, CMP, CMP, CMP, CMP, CMP, CMP, CMP,
 
-            RNZ, POP, JNZ,  JMP, CNZ, PUSH, ADI, UNK,  RZ,  RET,  JZ,  UNK,  CZ, CALL, ACI, UNK,
-            RNC, POP, JNC,  OUT, CNC, PUSH, SUI, UNK,  RC,  UNK,  JC,   IN,  CC,  UNK, SBI, UNK,
-            RPO, POP, JPO, XTHL, CPO, PUSH, ANI, UNK, RPE, PCHL, JPE, XCHG, CPE,  UNK, XRI, UNK,
-             RP, POP,  JP,   DI,  CP, PUSH, ORI, UNK,  RM, SPHL,  JM,   EI,  CM,  UNK, CPI, UNK,
+            RNZ, POP, JNZ,  JMP, CNZ, PUSH, ADI, RST,  RZ,  RET,  JZ,  UNK,  CZ, CALL, ACI, RST,
+            RNC, POP, JNC,  OUT, CNC, PUSH, SUI, RST,  RC,  UNK,  JC,   IN,  CC,  UNK, SBI, RST,
+            RPO, POP, JPO, XTHL, CPO, PUSH, ANI, RST, RPE, PCHL, JPE, XCHG, CPE,  UNK, XRI, RST,
+             RP, POP,  JP,   DI,  CP, PUSH, ORI, RST,  RM, SPHL,  JM,   EI,  CM,  UNK, CPI, RST,
     };
     
     public static String[] mnemonics = {
@@ -245,7 +245,7 @@ enum Instruction {
             "CNZ #A",
             "PUSH B",
             "ADI #d",
-            "UNK",
+            "RST 0",
             "RZ",
             "RET",
             "JZ #A",
@@ -253,7 +253,7 @@ enum Instruction {
             "CZ #A",
             "CALL #A",
             "ACI #d",
-            "UNK",
+            "RST 1",
             "RNC",
             "POP D",
             "JNC #A",
@@ -261,7 +261,7 @@ enum Instruction {
             "CNC #A",
             "PUSH D",
             "SUI #d",
-            "UNK",
+            "RST 2",
             "RC",
             "UNK",
             "JC #A",
@@ -269,7 +269,7 @@ enum Instruction {
             "CC #A",
             "UNK",
             "SBI #d",
-            "UNK",
+            "RST 3",
             "RPO",
             "POP H",
             "JPO #A",
@@ -277,7 +277,7 @@ enum Instruction {
             "CPO #A",
             "PUSH H",
             "ANI #d",
-            "UNK",
+            "RST 4",
             "RPE",
             "PCHL",
             "JPE #A",
@@ -285,7 +285,7 @@ enum Instruction {
             "CPE #A",
             "UNK",
             "XRI #d",
-            "UNK",
+            "RST 5",
             "RP",
             "POP PSW",
             "JP #A",
@@ -293,7 +293,7 @@ enum Instruction {
             "CP #A",
             "PUSH PSW",
             "ORI #d",
-            "UNK",
+            "RST 6",
             "RM",
             "SPHL",
             "JM #A",
@@ -301,6 +301,6 @@ enum Instruction {
             "CM #A",
             "UNK",
             "CPI #d",
-            "UNK"
+            "RST 7"
     };
 }

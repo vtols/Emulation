@@ -8,11 +8,11 @@ public class Disassembler {
     int pc = 0;
     ByteBuffer bytes;
 
-    Disassembler(ByteBuffer bytes) {
+    public Disassembler(ByteBuffer bytes) {
         this.bytes = bytes;
     }
 
-    void disassembleAll() {
+    public void disassembleAll() {
         pc = 0; //0x2920;
         while (pc < 0x4000) {
             disassembleSingle();
