@@ -42,6 +42,15 @@ public class Cpu8080 {
     private static final int FLAG_Z = 0x40;
     private static final int FLAG_S = 0x80;
 
+    private static final int COND_NZ = 0;
+    private static final int COND_Z  = 1;
+    private static final int COND_NC = 2;
+    private static final int COND_C  = 3;
+    private static final int COND_PO = 4;
+    private static final int COND_PE = 5;
+    private static final int COND_P  = 6;
+    private static final int COND_M  = 7;
+
     private enum Arithmetic {
         OP_ADD, OP_SUB, OP_AND, OP_OR, OP_XOR
     }
@@ -321,6 +330,22 @@ public class Cpu8080 {
         return doArithmetics(type, a, b, 0, flags);
     }
 
+    private boolean checkCondition(int code) {
+        if ((code & 1) != 0)
+            return true;
+        switch (leftPart(code)) {
+            case COND_NZ: return !getFlag(FLAG_Z);
+            case COND_Z: return getFlag(FLAG_Z);
+            case COND_NC: return !getFlag(FLAG_C);
+            case COND_C: return getFlag(FLAG_C);
+            case COND_PO: return !getFlag(FLAG_P);
+            case COND_PE: return getFlag(FLAG_P);
+            case COND_P: return !getFlag(FLAG_S);
+            case COND_M: return getFlag(FLAG_S);
+            default: return false;
+        }
+    }
+
     private void execute(int code, int savePc) {
         int src, dst;
         int s, t, p;
@@ -341,47 +366,19 @@ public class Cpu8080 {
                 break;
             case JMP:
                 j = getLongByPc();
-                putRegisterLong(REG_PC, j);
-                break;
-            case JZ:
-                j = getLongByPc();
-                if (getFlag(FLAG_Z))
+                if (checkCondition(code))
                     putRegisterLong(REG_PC, j);
                 break;
-            case JNZ:
-                j = getLongByPc();
-                if (!getFlag(FLAG_Z))
-                    putRegisterLong(REG_PC, j);
+            case RET:
+                if (checkCondition(code))
+                    popRegisterLong(REG_PC);
                 break;
-            case JC:
+            case CALL:
                 j = getLongByPc();
-                if (getFlag(FLAG_C))
+                if (checkCondition(code)) {
+                    pushRegisterLong(REG_PC);
                     putRegisterLong(REG_PC, j);
-                break;
-            case JNC:
-                j = getLongByPc();
-                if (!getFlag(FLAG_C))
-                    putRegisterLong(REG_PC, j);
-                break;
-            case JPE:
-                j = getLongByPc();
-                if (getFlag(FLAG_P))
-                    putRegisterLong(REG_PC, j);
-                break;
-            case JPO:
-                j = getLongByPc();
-                if (!getFlag(FLAG_P))
-                    putRegisterLong(REG_PC, j);
-                break;
-            case JP:
-                j = getLongByPc();
-                if (!getFlag(FLAG_S))
-                    putRegisterLong(REG_PC, j);
-                break;
-            case JM:
-                j = getLongByPc();
-                if (getFlag(FLAG_S))
-                    putRegisterLong(REG_PC, j);
+                }
                 break;
             case LXI:
                 putPair(registerPairPart(code), getLongByPc());
@@ -400,102 +397,6 @@ public class Cpu8080 {
                 break;
             case SHLD:
                 storeLongAt(getLongByPc(), getRegisterLong(REG_H));
-                break;
-            case CALL:
-                j = getLongByPc();
-                pushRegisterLong(REG_PC);
-                putRegisterLong(REG_PC, j);
-                break;
-            case CC:
-                j = getLongByPc();
-                if (getFlag(FLAG_C)) {
-                    pushRegisterLong(REG_PC);
-                    putRegisterLong(REG_PC, j);
-                }
-                break;
-            case CPO:
-                j = getLongByPc();
-                if (!getFlag(FLAG_P)) {
-                    pushRegisterLong(REG_PC);
-                    putRegisterLong(REG_PC, j);
-                }
-                break;
-            case CPE:
-                j = getLongByPc();
-                if (getFlag(FLAG_P)) {
-                    pushRegisterLong(REG_PC);
-                    putRegisterLong(REG_PC, j);
-                }
-                break;
-            case CM:
-                j = getLongByPc();
-                if (getFlag(FLAG_S)) {
-                    pushRegisterLong(REG_PC);
-                    putRegisterLong(REG_PC, j);
-                }
-                break;
-            case CP:
-                j = getLongByPc();
-                if (!getFlag(FLAG_S)) {
-                    pushRegisterLong(REG_PC);
-                    putRegisterLong(REG_PC, j);
-                }
-                break;
-            case CZ:
-                j = getLongByPc();
-                if (getFlag(FLAG_Z)) {
-                    pushRegisterLong(REG_PC);
-                    putRegisterLong(REG_PC, j);
-                }
-                break;
-            case CNZ:
-                j = getLongByPc();
-                if (!getFlag(FLAG_Z)) {
-                    pushRegisterLong(REG_PC);
-                    putRegisterLong(REG_PC, j);
-                }
-                break;
-            case CNC:
-                j = getLongByPc();
-                if (!getFlag(FLAG_C)) {
-                    pushRegisterLong(REG_PC);
-                    putRegisterLong(REG_PC, j);
-                }
-                break;
-            case RET:
-                popRegisterLong(REG_PC);
-                break;
-            case RZ:
-                if (getFlag(FLAG_Z))
-                    popRegisterLong(REG_PC);
-                break;
-            case RNZ:
-                if (!getFlag(FLAG_Z))
-                    popRegisterLong(REG_PC);
-                break;
-            case RP:
-                if (!getFlag(FLAG_S))
-                    popRegisterLong(REG_PC);
-                break;
-            case RM:
-                if (getFlag(FLAG_S))
-                    popRegisterLong(REG_PC);
-                break;
-            case RPE:
-                if (getFlag(FLAG_P))
-                    popRegisterLong(REG_PC);
-                break;
-            case RPO:
-                if (!getFlag(FLAG_P))
-                    popRegisterLong(REG_PC);
-                break;
-            case RC:
-                if (getFlag(FLAG_C))
-                    popRegisterLong(REG_PC);
-                break;
-            case RNC:
-                if (!getFlag(FLAG_C))
-                    popRegisterLong(REG_PC);
                 break;
             case LDAX:
                 putRegister(REG_A, fetchBy(D_MAP[registerPairPart(code)]));

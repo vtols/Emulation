@@ -9,17 +9,11 @@ enum Instruction {
     CMA,    CMC,    MOV,    HLT,
     ADD,    ADC,    SUB,    SBB,
     ANA,    XRA,    ORA,    CMP,
-    JMP,   CALL,    JNZ,    RET,
-    CPI,   PUSH,   XCHG,    POP,
-    OUT,    ADI,    SUI,    ANI,
-    ORI,     DI,     EI,     JZ,
-    JC,     RNZ,   PCHL,   SPHL,
-    RM,     JNC,    JPE,     JP,
-    JPO,     JM,    ACI,    SBI,
-    XRI,     CZ,     CC,    CPE,
-    CNZ,    CNC,    CPO,     CP,
-    CM,      RZ,     RC,    RPE,
-    RNC,    RPO,     RP,   XTHL,
+    JMP,   CALL,    RET,    CPI,
+    PUSH,  XCHG,    POP,    OUT,
+    ADI,    SUI,    ANI,    ORI,
+    DI,      EI,    PCHL,  SPHL,
+    ACI,    SBI,    XRI,   XTHL,
     IN,     RST,
     UNK;
 
@@ -39,10 +33,10 @@ enum Instruction {
             ANA, ANA, ANA, ANA, ANA, ANA, ANA, ANA, XRA, XRA, XRA, XRA, XRA, XRA, XRA, XRA,
             ORA, ORA, ORA, ORA, ORA, ORA, ORA, ORA, CMP, CMP, CMP, CMP, CMP, CMP, CMP, CMP,
 
-            RNZ, POP, JNZ,  JMP, CNZ, PUSH, ADI, RST,  RZ,  RET,  JZ,  UNK,  CZ, CALL, ACI, RST,
-            RNC, POP, JNC,  OUT, CNC, PUSH, SUI, RST,  RC,  UNK,  JC,   IN,  CC,  UNK, SBI, RST,
-            RPO, POP, JPO, XTHL, CPO, PUSH, ANI, RST, RPE, PCHL, JPE, XCHG, CPE,  UNK, XRI, RST,
-             RP, POP,  JP,   DI,  CP, PUSH, ORI, RST,  RM, SPHL,  JM,   EI,  CM,  UNK, CPI, RST,
+            RET, POP, JMP,  JMP, CALL, PUSH, ADI, RST, RET,  RET,  JMP,  UNK, CALL, CALL, ACI, RST,
+            RET, POP, JMP,  OUT, CALL, PUSH, SUI, RST, RET,  UNK,  JMP,   IN, CALL,  UNK, SBI, RST,
+            RET, POP, JMP, XTHL, CALL, PUSH, ANI, RST, RET, PCHL,  JMP, XCHG, CALL,  UNK, XRI, RST,
+            RET, POP, JMP,   DI, CALL, PUSH, ORI, RST, RET, SPHL,  JMP,   EI, CALL,  UNK, CPI, RST,
     };
     
     public static String[] mnemonics = {

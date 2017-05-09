@@ -118,7 +118,7 @@ public class VestaVideo {
 
         frame.getContentPane().setLayout(new GridLayout(1, 2));
         frame.getContentPane().add(panel);
-        frame.getContentPane().add(keysPanel);
+        //frame.getContentPane().add(keysPanel);
 
         frame.pack();
         frame.setVisible(true);
