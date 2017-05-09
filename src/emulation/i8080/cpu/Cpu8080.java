@@ -237,31 +237,20 @@ public class Cpu8080 {
         putRegisterLong(reg, value);
     }
 
-    byte rd = 1;
     private void out(int to, byte value) {
         to &= 0xFF;
-        if (to == 1)
-            System.out.print((char) value);
-        //System.out.printf("%02x <- %02x\n", to, value);
         if (ports[to] != null)
             ports[to].write(value);
     }
 
     private byte in(int from) {
         from &= 0xFF;
-        System.out.printf("%02x ->\n", from);
         if (ports[from] != null)
             return ports[from].read();
-        else if (from == 0x0d)
-            return 1;
-        else
-            return 0;
+        return 0;
     }
 
     public void run(short start) {
-        //Disassembler dis = new Disassembler(ram);
-        //dis.disassembleAll();
-
         putRegisterLong(REG_PC, start);
         while (running) {
             runSingle();
@@ -271,19 +260,22 @@ public class Cpu8080 {
     public void runSingle() {
         int intCode;
         int oldPc = getRegisterLong(REG_PC);
+
+        if (!interruptions)
+            interruption = 0;
+
         if (interruptions && interruption != 0) {
             intCode = interruption;
             interruption = 0;
             interruptions = false;
-            execute(intCode, oldPc);
+            execute(intCode & 0xFF, oldPc);
         } else {
             execute(getByPc() & 0xFF, oldPc);
         }
     }
 
-    private void interrupt(byte code) {
-        if (interruptions)
-            interruption = code;
+    public void interrupt(byte code) {
+        interruption = code;
     }
 
     private int doArithmetics(Arithmetic type, int a, int b, int carry, int flags) {
@@ -330,8 +322,6 @@ public class Cpu8080 {
     }
 
     private void execute(int code, int savePc) {
-        //System.out.printf("[%7d]%04x: %-10s %s\n", count, (short) savePc, disassemble(savePc), registerString());
-
         int src, dst;
         int s, t, p;
         short j;
@@ -711,8 +701,14 @@ public class Cpu8080 {
             case IN:
                 putRegister(REG_A, in(getByPc()));
                 break;
+            case RST:
+                j = (short) (code & 0x38);
+                pushRegisterLong(REG_PC);
+                putRegisterLong(REG_PC, j);
+                break;
             case DI:
                 interruptions = false;
+                break;
             case EI:
                 interruptions = true;
                 break;
@@ -739,6 +735,6 @@ public class Cpu8080 {
         for (int i = 0; i < 8; i++)
             if ((f & (1 << i)) != 0)
                 flags[i] = Character.toUpperCase(flags[i]);
-        return regs + "{" + String.valueOf(flags) + "}";
+        return regs + "{" + String.valueOf(flags) + "}" + (interruptions ? " EI" : " DI");
     }
 }
