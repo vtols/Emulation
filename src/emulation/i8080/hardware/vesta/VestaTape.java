@@ -2,21 +2,59 @@ package emulation.i8080.hardware.vesta;
 
 import emulation.i8080.cpu.Port;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 public class VestaTape {
     byte[] tape;
-    int p = 0, bp = 0, bx = 0, s = 0, k = 0;
-    boolean header = true;
-    private int[][] bxs = {
-            {0, 0, 1, 1},
-            {0, 1, 0, 1}
-    };
+    int p = 0;
+
     private int[] casSignature = {
             0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x1F, 0xA6, 0xDE, 0xBA, 0xCC, 0x13, 0x7D, 0x74
     };
 
+    List<Integer> signal = new ArrayList<>();
+
+    List<Integer> zero = Arrays.asList(0, 0, 1, 1);
+    List<Integer> one = Arrays.asList(0, 1, 0, 1);
+
     public VestaTape(byte[] casData) {
         tape = casData;
+        generateSignal();
+    }
+
+    void generateSignal() {
+        generateHeader(1024);
+        for (int i = 8; i < tape.length; ) {
+            boolean match = true;
+            for (int j = 0; j < casSignature.length; j++) {
+                if (tape[i + j] != casSignature[j]) {
+                    match = false;
+                    break;
+                }
+            }
+            if (match) {
+                generateHeader(256);
+                i += 8;
+            } else {
+                signal.addAll(zero);
+                for (int j = 0; j < 8; j++) {
+                    int x = (tape[i] >> j) & 1;
+                    signal.addAll(x == 0 ? zero : one);
+                }
+                signal.addAll(one);
+                signal.addAll(one);
+                i++;
+            }
+        }
+    }
+
+    void generateHeader(int count) {
+        for (int i = 0; i < count; i++) {
+            signal.addAll(one);
+        }
     }
 
     public Port getTapePort() {
@@ -31,44 +69,7 @@ public class VestaTape {
 
         @Override
         public byte read() {
-            int out;
-            if (header) {
-                if (p % 2 == 0)
-                    out = 0;
-                else
-                    out = 1;
-                p++;
-                if (p == 4096) {
-                    header = false;
-                    p = 8;
-                }
-            } else {
-                int currentBit;
-                if (bp == 0) {
-                    currentBit = 0;
-                } else if (bp > 8) {
-                    currentBit = 1;
-                } else
-                    currentBit = (tape[p] >> (bp - 1)) & 1;
-                out = bxs[currentBit][bx];
-                bx++;
-                if (bx == 4) {
-                    bx = 0;
-                    bp++;
-                }
-                if (bp == 11) {
-                    bp = 0;
-                    p++;
-                    k++;
-                }
-                if (bp == 9 && bx == 1 && k == 15) {
-                    p++;
-                    bp = 0;
-                    bx = 0;
-                    k = 0;
-                }
-            }
-            return (byte) (out << 7);
+            return (byte) (signal.get(p++) << 7);
         }
     }
 }
