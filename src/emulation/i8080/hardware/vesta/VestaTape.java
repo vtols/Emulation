@@ -26,18 +26,19 @@ public class VestaTape {
     }
 
     void generateSignal() {
+        //generateSilence(1024);
         generateHeader(1024);
         for (int i = 8; i < tape.length; ) {
             boolean match = true;
             for (int j = 0; j < casSignature.length; j++) {
-                if (tape[i + j] != casSignature[j]) {
+                if ((tape[i + j] & 0xff) != casSignature[j]) {
                     match = false;
                     break;
                 }
             }
-            match = false;
             if (match) {
-                generateHeader(256);
+                //generateSilence(1024);
+                generateHeader(1024);
                 i += 8;
             } else {
                 signal.addAll(zero);
@@ -45,12 +46,8 @@ public class VestaTape {
                     int x = (tape[i] >> j) & 1;
                     signal.addAll(x == 0 ? zero : one);
                 }
-                if (i % 16 == 7) {
-                    signal.add(1);
-                } else {
-                    signal.addAll(one);
-                    signal.addAll(one);
-                }
+                signal.addAll(one);
+                signal.addAll(one);
                 i++;
             }
         }
@@ -59,6 +56,12 @@ public class VestaTape {
     void generateHeader(int count) {
         for (int i = 0; i < count; i++) {
             signal.addAll(one);
+        }
+    }
+
+    void generateSilence(int count) {
+        for (int i = 0; i < count; i++) {
+            signal.add(0);
         }
     }
 
