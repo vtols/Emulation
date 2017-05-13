@@ -22,6 +22,7 @@ public class VestaHardware {
         cpu.setPort(0x81, keyboard.getKeyboardModePort());
         cpu.setPort(0x82, keyboard.getKeyboardPort());
         cpu.setPort(0x84, video.getModePort());
+        cpu.setPort(0x88, video.getColorModePort());
     }
 
     public void loadCas(byte[] cas) {

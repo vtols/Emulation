@@ -8,16 +8,43 @@ import java.awt.event.*;
 import java.awt.image.BufferedImage;
 
 public class VestaVideo {
+    private static final int[] textPalette = {
+            0x000000,
+            0x000000,
+            0x00ff00,
+            0x7fff7f,
+            0x0000ff,
+            0x00007f,
+            0x00ffff,
+            0x7f7fff,
+
+            0xff0000,
+            0xff7f7f,
+            0xffff00,
+            0xffff7f,
+            0xff00ff,
+            0xff7fff,
+            0x7f7f7f,
+            0xffffff
+    };
+
     private int mask;
     private int startAddress;
     private byte[] ram;
-    private int mode = 0;
-    private BufferedImage screenBuffer;
+    private int mode = 0, drawMode;
+    private int colorMode = 0;
+    private final BufferedImage[] screenBuffer;
     private VestaKeyboard kb;
 
     public VestaVideo(byte[] ram, VestaKeyboard kb) {
         this.ram = ram;
         this.kb = kb;
+
+        screenBuffer = new BufferedImage[] {
+                new BufferedImage(8 * 32, 8 * 24, BufferedImage.TYPE_INT_RGB),
+                new BufferedImage(6 * 40, 8 * 24, BufferedImage.TYPE_INT_RGB),
+                new BufferedImage(256, 192, BufferedImage.TYPE_INT_RGB)
+        };
 
         resetBuffer();
 
@@ -25,58 +52,69 @@ public class VestaVideo {
     }
 
     private void resetBuffer() {
-        switch (mode) {
-            case 0:
-                screenBuffer = new BufferedImage(6 * 40, 8 * 24, BufferedImage.TYPE_INT_RGB);
-                break;
-            case 1:
-                screenBuffer = new BufferedImage(8 * 32, 8 * 24, BufferedImage.TYPE_INT_RGB);
-                break;
-            case 2:
-                screenBuffer = new BufferedImage(256, 191, BufferedImage.TYPE_INT_RGB);
-                break;
-        }
-        Graphics g = screenBuffer.getGraphics();
+        drawMode = mode;
+        Graphics g = screenBuffer[drawMode].getGraphics();
         g.setColor(Color.black);
         g.fillRect(0, 0, 256, 192);
     }
 
     private void updateScreen() {
-        if (mode != 1)
-            return;
-        for (int cx = 0; cx < 32; cx++) {
-            for (int cy = 0; cy < 24; cy++) {
-                int pos = cy * 64 + cx;
-                int c = ram[startAddress + pos] & 0xFF;
-                drawCode(cx * 8, cy * 8, c, color(c));
+        switch (drawMode) {
+            case 0:
+                drawCodes(32, 24, 8, 8);
+                break;
+            case 1:
+                drawCodes(40, 24, 6, 8);
+                break;
+            case 2:
+                drawVideo();
+                break;
+        }
+    }
+
+    private void drawVideo() {
+        for (int i = 0; i < 192; i++) {
+            for (int j = 0; j < 256; j++) {
+                int code = ram[startAddress + 0x1800 + ((i / 8) * 32 + j / 8) % 256] & 0xff;
+                int codeY = i % 8;
+                int codeX = j % 8;
+                int part = i / 64;
+                byte graphics = ram[part * 0x800 + code * 8 + codeY];
+                int color = ram[0x2000 + part * 0x800 + code * 8 + codeY];
+                int fg = (graphics >> (7 - codeX)) & 1;
+                if (fg == 0)
+                    color >>= 4;
+                screenBuffer[drawMode].setRGB(j, i, textPalette[color & 0x0f]);
             }
         }
     }
 
-    private void drawCodes() {
-        for (int c = 0; c < 256; c++) {
-            int y = (c >> 4) * 8;
-            int x = (c & 0x0F) * 8;
-            drawCode(x + 20, y + 20, c, color(c));
+    private void drawCodes(int tw, int th, int cw, int ch) {
+        for (int cx = 0; cx < tw; cx++) {
+            for (int cy = 0; cy < th; cy++) {
+                int pos = cy * (drawMode == 1 ? 64 : 32) + cx;
+                int c = ram[startAddress + pos] & 0xFF;
+                drawCode(cw, ch, cx * cw, cy * ch, c);
+            }
         }
     }
 
-    private int[] colors = {Color.black.getRGB(), Color.white.getRGB()};
-
-    private int color(int c) {
+    private int color(int fg, int c) {
+        if (drawMode == 1)
+            return fg == 0 ? Color.black.getRGB() : Color.white.getRGB();
         int off = startAddress + 0x400 + (c >> 3);
-        return (ram[off] & 0xF0) != 0 ? 1 : 0;
+        int value = ram[off];
+        if (fg == 0)
+            value >>= 4;
+        return textPalette[value & 0x0f];
     }
 
-    private void drawCode(int x, int y, int c, int color) {
-        int coff = startAddress + 0x800 + c * 8;
-        for (int sy = 0; sy < 8; sy++) {
-            for (int sx = 0; sx < 8; sx++) {
-                int v = (ram[coff + sy] >> sx) & 1;
-                if (v == 0)
-                    screenBuffer.setRGB(x + 7 - sx, y + sy, colors[0]);
-                else
-                    screenBuffer.setRGB(x + 7 - sx, y + sy, colors[color]);
+    private void drawCode(int w, int h, int x, int y, int c) {
+        int charOffset = startAddress + 0x800 + c * 8;
+        for (int sy = 0; sy < h; sy++) {
+            for (int sx = 0; sx < w; sx++) {
+                int v = (ram[charOffset + sy] >> (7 - sx)) & 1;
+                screenBuffer[drawMode].setRGB(x + sx, y + sy, color(v, c));
             }
         }
     }
@@ -87,7 +125,7 @@ public class VestaVideo {
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
         ScreenPanel panel = new ScreenPanel();
-        panel.setPreferredSize(new Dimension(800, 600));
+        panel.setPreferredSize(new Dimension(720, 576));
         panel.addKeyListener(panel);
         panel.setFocusable(true);
 
@@ -124,6 +162,7 @@ public class VestaVideo {
         frame.setVisible(true);
 
         Timer t = new Timer(10, e -> {
+            drawMode = mode;
             updateScreen();
             panel.repaint();
         });
@@ -132,7 +171,7 @@ public class VestaVideo {
 
     private class ScreenPanel extends JPanel implements KeyListener {
         public void paintComponent(Graphics g) {
-            g.drawImage(screenBuffer, 0, 0, getWidth(), getHeight(), null);
+            g.drawImage(screenBuffer[drawMode], 0, 0, getWidth(), getHeight(), null);
         }
 
         @Override
@@ -160,8 +199,11 @@ public class VestaVideo {
         }
     }
 
-    public VideoModePort getModePort() {
+    public Port getModePort() {
         return new VideoModePort();
+    }
+    public Port getColorModePort() {
+        return new ColorModePort();
     }
 
     private class VideoModePort implements Port {
@@ -175,7 +217,6 @@ public class VestaVideo {
             } else {
                 mode = (value >> 5) & 1;
             }
-            resetBuffer();
             System.out.printf("Set video mode %d at address %08X\n",
                     mode, startAddress);
         }
@@ -183,6 +224,18 @@ public class VestaVideo {
         @Override
         public byte read() {
             return (byte) mask;
+        }
+    }
+
+    private class ColorModePort implements Port {
+        @Override
+        public void write(byte value) {
+            colorMode = value;
+        }
+
+        @Override
+        public byte read() {
+            return 0;
         }
     }
 }
