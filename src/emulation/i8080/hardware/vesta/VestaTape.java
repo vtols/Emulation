@@ -11,7 +11,7 @@ public class VestaTape {
     int p = 0;
 
     private int[] casSignature = {
-            0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            //0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x1F, 0xA6, 0xDE, 0xBA, 0xCC, 0x13, 0x7D, 0x74
     };
 
@@ -35,6 +35,7 @@ public class VestaTape {
                     break;
                 }
             }
+            match = false;
             if (match) {
                 generateHeader(256);
                 i += 8;
@@ -44,8 +45,12 @@ public class VestaTape {
                     int x = (tape[i] >> j) & 1;
                     signal.addAll(x == 0 ? zero : one);
                 }
-                signal.addAll(one);
-                signal.addAll(one);
+                if (i % 16 == 7) {
+                    signal.add(1);
+                } else {
+                    signal.addAll(one);
+                    signal.addAll(one);
+                }
                 i++;
             }
         }
