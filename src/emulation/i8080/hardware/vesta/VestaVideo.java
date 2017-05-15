@@ -33,6 +33,8 @@ public class VestaVideo {
     private byte[] ram;
     private int mode = 0, drawMode;
     private int colorMode = 0;
+    private int charBufferOffset = 0x400;
+    private int charGenOffset = 0x800;
     private final BufferedImage[] screenBuffer;
     private VestaKeyboard kb;
 
@@ -93,7 +95,7 @@ public class VestaVideo {
         for (int cx = 0; cx < tw; cx++) {
             for (int cy = 0; cy < th; cy++) {
                 int pos = cy * (drawMode == 1 ? 64 : 32) + cx;
-                int c = ram[startAddress + pos] & 0xFF;
+                int c = ram[startAddress + charBufferOffset + pos] & 0xFF;
                 drawCode(cw, ch, cx * cw, cy * ch, c);
             }
         }
@@ -102,7 +104,7 @@ public class VestaVideo {
     private int color(int fg, int c) {
         if (drawMode == 1)
             return fg == 0 ? Color.black.getRGB() : Color.white.getRGB();
-        int off = startAddress + 0x400 + (c >> 3);
+        int off = startAddress + charBufferOffset + 0x400 + (c >> 3);
         int value = ram[off];
         if (fg == 0)
             value >>= 4;
@@ -110,7 +112,7 @@ public class VestaVideo {
     }
 
     private void drawCode(int w, int h, int x, int y, int c) {
-        int charOffset = startAddress + 0x800 + c * 8;
+        int charOffset = startAddress + charGenOffset + c * 8;
         for (int sy = 0; sy < h; sy++) {
             for (int sx = 0; sx < w; sx++) {
                 int v = (ram[charOffset + sy] >> (7 - sx)) & 1;
@@ -202,8 +204,17 @@ public class VestaVideo {
     public Port getModePort() {
         return new VideoModePort();
     }
+
     public Port getColorModePort() {
         return new ColorModePort();
+    }
+
+    public Port getCharacterBufferPort() {
+        return new CharacterBufferPort();
+    }
+
+    public Port getCharacterGeneratorPort() {
+        return new CharacterGeneratorPort();
     }
 
     private class VideoModePort implements Port {
@@ -217,7 +228,7 @@ public class VestaVideo {
             } else {
                 mode = (value >> 5) & 1;
             }
-            System.out.printf("Set video mode %d at address %08X\n",
+            System.out.printf("Set video mode %d at address %04X\n",
                     mode, startAddress);
         }
 
@@ -231,6 +242,34 @@ public class VestaVideo {
         @Override
         public void write(byte value) {
             colorMode = value;
+        }
+
+        @Override
+        public byte read() {
+            return 0;
+        }
+    }
+
+    private class CharacterBufferPort implements Port {
+        @Override
+        public void write(byte value) {
+            if (mode == 0) {
+                charBufferOffset = (value & 0x0F) << 10;
+            } else if (mode == 1) {
+                charBufferOffset = (value & 0x0E) << 10;
+            }
+        }
+
+        @Override
+        public byte read() {
+            return 0;
+        }
+    }
+
+    private class CharacterGeneratorPort implements Port {
+        @Override
+        public void write(byte value) {
+            charGenOffset = (value & 0x0E) << 10;
         }
 
         @Override

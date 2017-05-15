@@ -23,11 +23,18 @@ public class VestaHardware {
         cpu.setPort(0x82, keyboard.getKeyboardPort());
         cpu.setPort(0x84, video.getModePort());
         cpu.setPort(0x88, video.getColorModePort());
+
+        cpu.setPort(0x90, video.getCharacterBufferPort());
+        cpu.setPort(0x91, video.getCharacterGeneratorPort());
     }
 
     public void loadCas(byte[] cas) {
         tape = new VestaTape(cas);
         cpu.setPort(0x8d, tape.getTapePort());
+    }
+
+    public void setExtension(int id, byte[] data) {
+        vsmem.setExtension(id, data);
     }
 
     public void run() {

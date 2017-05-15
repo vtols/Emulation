@@ -20,9 +20,14 @@ public class VestaMemory implements Memory {
     private int[] modes = new int[MODE_COUNT];
     private byte[] ram = new byte[RAM_SIZE];
     private byte[] rom;
+    private byte[][] ext = new byte[2][];
 
     public VestaMemory(byte[] rom) {
         this.rom = rom;
+    }
+
+    public void setExtension(int id, byte[] data) {
+        ext[id - 1] = data;
     }
 
     @Override
@@ -38,8 +43,16 @@ public class VestaMemory implements Memory {
                 return ram[address];
             case MODE_ROM:
                 return rom[address & ~REGION_MASK];
+            case MODE_EXT1:
+                if (ext[0] == null)
+                    return 0;
+                return ext[0][address & ~REGION_MASK];
+            case MODE_EXT2:
+                if (ext[1] == null)
+                    return 0;
+                return ext[1][address & ~REGION_MASK];
             default:
-                return 0;
+                throw new IllegalStateException();
         }
     }
 
@@ -53,14 +66,7 @@ public class VestaMemory implements Memory {
     @Override
     public void write(int address, byte value) {
         int writeMode = modes[(address & REGION_MASK) >> REGION_SHIFT];
-        switch (writeMode) {
-            case MODE_RAM:
-            case MODE_ROM:
-                ram[address] = value;
-                break;
-            default:
-                throw new NotImplementedException();
-        }
+        ram[address] = value;
     }
 
     @Override

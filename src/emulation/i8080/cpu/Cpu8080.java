@@ -268,7 +268,7 @@ public class Cpu8080 {
 
     public void runSingle() {
         int intCode;
-        int oldPc = getRegisterLong(REG_PC);
+        int oldPc = getRegisterLong(REG_PC) & 0xFFFF;
 
         if (!interruptions)
             interruption = 0;
