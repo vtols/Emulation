@@ -2,7 +2,6 @@ package emulation.i8080.hardware.vesta;
 
 import emulation.i8080.cpu.Port;
 import emulation.i8080.hardware.Memory;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public class VestaMemory implements Memory {
     private static final int MODE_ROM = 0;
@@ -44,13 +43,12 @@ public class VestaMemory implements Memory {
             case MODE_ROM:
                 return rom[address & ~REGION_MASK];
             case MODE_EXT1:
-                if (ext[0] == null)
-                    return 0;
-                return ext[0][address & ~REGION_MASK];
             case MODE_EXT2:
-                if (ext[1] == null)
+                int extId = readMode - 1;
+                int extAddress = address & ~REGION_MASK;
+                if (ext[extId] == null || extAddress >= ext[extId].length)
                     return 0;
-                return ext[1][address & ~REGION_MASK];
+                return ext[extId][address & ~REGION_MASK];
             default:
                 throw new IllegalStateException();
         }
